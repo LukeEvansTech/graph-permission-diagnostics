@@ -15,7 +15,11 @@
       6. Consent       - tenant/user OAuth2 grants for the client app (best effort)
 
     Every layer is independently error-handled; one failure never aborts the run.
-    The script makes no changes to the tenant or the local machine.
+
+    READ-ONLY GUARANTEE: every Graph call is a GET, registry access is
+    read-only, and remediation commands are printed for you to run yourself,
+    never executed. The only write the script can perform is the optional
+    report file when you pass -ReportPath.
 
 .PARAMETER Cmdlet
     Diagnose a specific failing SDK cmdlet (e.g. Get-MgUser). Looks up the

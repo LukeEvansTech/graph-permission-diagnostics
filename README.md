@@ -25,8 +25,10 @@ the **same PowerShell session** where your Graph calls fail:
 Run it *after* `Connect-MgGraph` so layers 3-6 can inspect the live session;
 without a session it still validates environment and connectivity.
 
-The script is read-only: it makes no changes to the tenant or the machine.
-All remediation is printed as suggested commands for you to run yourself.
+The script is read-only: every Graph call is a GET, registry access is
+read-only, and remediation is printed as suggested commands for you to run
+yourself — never executed. The only write it can perform is the report file
+when you opt in with `-ReportPath`.
 
 ## What it checks
 
