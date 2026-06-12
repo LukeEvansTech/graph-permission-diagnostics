@@ -1,47 +1,82 @@
-# entraidgraphperms
+# Graph Permission Diagnostics
 
-Diagnostics for Microsoft Graph API permission errors (401/403) hit by the
-Microsoft Graph PowerShell SDK with delegated sign-in on Windows PowerShell 5.1.
+Pinpoints why Microsoft Graph calls fail with 401/403 from the Microsoft Graph
+PowerShell SDK (delegated sign-in) on Windows PowerShell 5.1.
 
-## Usage
+Read-only: every Graph call is a GET and nothing on the machine is changed.
+The only file it writes is the optional `-ReportPath` report.
 
-Copy `Invoke-GraphPermissionDiagnostics.ps1` to the affected machine, then in
-the **same PowerShell session** where your Graph calls fail:
+## How to run
+
+**1. Copy** `Invoke-GraphPermissionDiagnostics.ps1` to the affected machine.
+
+**2. Unblock it** (files copied from another machine get marked as
+downloaded, and execution policy may refuse to run them):
 
 ```powershell
-# Full diagnostic run
-.\Invoke-GraphPermissionDiagnostics.ps1
+Unblock-File .\Invoke-GraphPermissionDiagnostics.ps1
+```
 
-# Diagnose one specific failing cmdlet
+If scripts are blocked entirely, allow them for just this session:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+```
+
+**3. Connect to Graph** the same way your failing workload does — same
+account, same scopes, **same PowerShell window**:
+
+```powershell
+Connect-MgGraph -Scopes "User.Read"
+```
+
+**4. Run it:**
+
+```powershell
+.\Invoke-GraphPermissionDiagnostics.ps1
+```
+
+## Common variations
+
+```powershell
+# Diagnose the one cmdlet that keeps failing
 .\Invoke-GraphPermissionDiagnostics.ps1 -Cmdlet Get-MgGroupMember
 
-# Diagnose a raw Graph URI, and save a shareable report
-.\Invoke-GraphPermissionDiagnostics.ps1 -Uri '/auditLogs/signIns' -ReportPath .\graph-diag.txt
+# Diagnose a raw Graph URI instead
+.\Invoke-GraphPermissionDiagnostics.ps1 -Uri '/auditLogs/signIns'
 
-# Skip the live probe battery (layer 4)
+# Save a shareable text report
+.\Invoke-GraphPermissionDiagnostics.ps1 -ReportPath .\graph-diag.txt
+
+# Environment/token checks only, skip the live probe battery
 .\Invoke-GraphPermissionDiagnostics.ps1 -SkipProbes
 ```
 
-Run it *after* `Connect-MgGraph` so layers 3-6 can inspect the live session;
-without a session it still validates environment and connectivity.
+No Graph session yet? It still runs — layers 1–2 (environment, connectivity)
+work standalone and it tells you how to connect for the rest.
 
-The script is read-only: every Graph call is a GET, registry access is
-read-only, and remediation is printed as suggested commands for you to run
-yourself — never executed. The only write it can perform is the report file
-when you opt in with `-ReportPath`.
+## Reading the output
 
-## What it checks
+- **Green PASS** — that layer is fine, look further down.
+- **Yellow WARN** — suspicious but not fatal (e.g. mixed module versions).
+- **Red FAIL** — a found problem; each one prints a `fix:` line with the
+  exact command or portal location to remediate.
+- The **Summary** at the end repeats every FAIL/WARN and, if scopes were
+  missing, gives you a ready-made line like:
 
-| Layer | Diagnoses |
-|-------|-----------|
-| 1 Environment | PS/.NET versions, TLS 1.2 (the classic PS 5.1 killer), proxy, mixed Graph module versions |
-| 2 Connectivity | TCP 443 to `login.microsoftonline.com` and `graph.microsoft.com` |
-| 3 Token (401) | `Get-MgContext` sanity, scopes in token, live `/me` smoke test, AADSTS code decoding |
-| 4 Probes (403) | Battery of read-only Graph calls vs the scopes actually in your token |
-| 5 Targeted | Required permissions for *your* failing cmdlet/URI vs current scopes |
-| 6 Consent | Tenant OAuth2 grants for the client app (best effort) |
+  ```powershell
+  Disconnect-MgGraph; Connect-MgGraph -Scopes "Group.Read.All", "User.Read.All"
+  ```
 
-It ends with a summary and, when scopes are missing, a ready-made
-`Connect-MgGraph -Scopes ...` reconnect line.
+Rule of thumb: 401s are fixed in layers 1–3 (TLS, clock, stale token);
+403s are fixed in layers 4–6 (missing scope, missing consent, or the user
+also needs an Entra admin role).
+
+## Requirements
+
+- Windows PowerShell 5.1 (works under PowerShell 7 too)
+- `Microsoft.Graph.Authentication` module (the script tells you if it's
+  missing or version-mismatched)
+- No admin rights needed
 
 Design notes: `docs/superpowers/specs/2026-06-12-graph-permission-diagnostics-design.md`
