@@ -72,6 +72,26 @@ Rule of thumb: 401s are fixed in layers 1–3 (TLS, clock, stale token);
 403s are fixed in layers 4–6 (missing scope, missing consent, or the user
 also needs an Entra admin role).
 
+## Companion: retrieve security alerts & incidents
+
+Once the diagnostics show the security probes passing, use
+`Get-GraphSecurityAlerts.ps1` to actually pull the data (read-only, same
+session):
+
+```powershell
+Connect-MgGraph -Scopes "SecurityAlert.Read.All","SecurityIncident.Read.All"
+
+# High/medium alerts from the last 14 days, plus incidents
+.\Get-GraphSecurityAlerts.ps1 -Days 14 -Severity high,medium -IncludeIncidents
+
+# Last 30 days to CSV
+.\Get-GraphSecurityAlerts.ps1 -Days 30 -CsvPath .\alerts.csv
+```
+
+Needs the scopes above **and** a security role on the signed-in user
+(Security Reader, Compliance Administrator, or Global Reader — PIM roles
+must be activated *before* connecting).
+
 ## Requirements
 
 - Windows PowerShell 5.1 (works under PowerShell 7 too)
