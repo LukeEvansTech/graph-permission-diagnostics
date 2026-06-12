@@ -390,6 +390,9 @@ function Test-PermissionProbes {
         @{ Name = 'Directory roles';  Uri = '/v1.0/directoryRoles';          SatisfiedBy = @('RoleManagement.Read.Directory', 'Directory.Read.All', 'Directory.ReadWrite.All'); Suggest = 'RoleManagement.Read.Directory' }
         @{ Name = 'App registrations'; Uri = '/v1.0/applications?$top=1';    SatisfiedBy = @('Application.Read.All', 'Application.ReadWrite.All'); Suggest = 'Application.Read.All' }
         @{ Name = 'Sign-in logs';     Uri = '/v1.0/auditLogs/signIns?$top=1'; SatisfiedBy = @('AuditLog.Read.All'); Suggest = 'AuditLog.Read.All' }
+        @{ Name = 'Security alerts';  Uri = '/v1.0/security/alerts_v2?$top=1'; SatisfiedBy = @('SecurityAlert.Read.All', 'SecurityAlert.ReadWrite.All'); Suggest = 'SecurityAlert.Read.All' }
+        @{ Name = 'Security incidents'; Uri = '/v1.0/security/incidents?$top=1'; SatisfiedBy = @('SecurityIncident.Read.All', 'SecurityIncident.ReadWrite.All'); Suggest = 'SecurityIncident.Read.All' }
+        @{ Name = 'Security alerts (legacy)'; Uri = '/v1.0/security/alerts?$top=1'; SatisfiedBy = @('SecurityEvents.Read.All', 'SecurityEvents.ReadWrite.All'); Suggest = 'SecurityEvents.Read.All' }
     )
 
     $tokenScopes = @()
